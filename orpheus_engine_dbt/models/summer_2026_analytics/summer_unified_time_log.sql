@@ -1701,7 +1701,13 @@ wrangler_ht_claims AS (
         NULL::text AS code_url,
         TIMESTAMP WITH TIME ZONE '2026-08-10 00:00:00+00' AS claim_start_ts
     FROM {{ source('airtable_wrangler', 'ysws_project_submission') }} hp
-    WHERE hp."linked_lapse_lookout_hackatime_links" IS NOT NULL AND hp."linked_lapse_lookout_hackatime_links" <> ''
+        LOWER(REPLACE(BTRIM(SPLIT_PART(url, '/project/', 2)), '+', ' ')) AS hackatime_alias,
+        NULL::text AS project_name,
+        NULL::text AS code_url,
+        TIMESTAMP WITH TIME ZONE '2026-08-10 00:00:00+00' AS claim_start_ts
+    FROM {{ source('airtable_wrangler', 'ysws_project_submission') }} hp
+    CROSS JOIN LATERAL unnest(string_to_array(hp."linked_lapse_lookout_hackatime_links", E'\n')) AS url
+    WHERE url LIKE '%/project/%'
 ),
 
 all_claims_raw AS (
